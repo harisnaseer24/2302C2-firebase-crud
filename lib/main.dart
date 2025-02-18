@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crud/auth.dart';
 import 'package:firebase_crud/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -20,25 +21,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: MyProducts(),
+      home: Signup(),
+      routes: {
+        '/products': (context)=>MyProducts()
+      },
     );
   }
 }
@@ -62,6 +51,63 @@ try {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Fail to delete product"),));
 }
  }
+ void _editProduct(String id,String title,String description,double price){
+
+  TextEditingController titleController=TextEditingController(text: title);
+  TextEditingController descController=TextEditingController(text: description);
+  TextEditingController priceController=TextEditingController(text: price.toString());
+
+  showDialog(context: context, builder: (context){
+return
+AlertDialog(
+  title: Text("Edit $title"),
+  content: Column(
+     mainAxisSize: MainAxisSize.min,
+    children: [
+      TextField(
+        controller: titleController,
+        decoration: InputDecoration(
+          labelText: "Title"
+        ),),
+         TextField(
+        controller: descController,
+        decoration: InputDecoration(
+          labelText: "Description"
+        ),
+      ),
+       TextField(
+        controller: priceController,
+        decoration: InputDecoration(
+          labelText: "Price"
+        ),)
+    ],
+  ),
+  
+  
+  actions: [
+    TextButton(onPressed: () {
+      Navigator.pop(context);
+    }, child: Text("Cancel")),
+
+    TextButton(onPressed: () async{
+      try {
+        await products.doc(id).update({
+          'title':titleController.text,
+          'description':descController.text,
+          'price':double.parse(priceController.text)
+        });
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Product updated successfully"),));
+      } catch (e) {
+        print(e);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Fail to update product"),));
+      }
+    }, child: Text("Update"))
+  ],);
+  });
+
+
+ }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,16 +120,29 @@ try {
         if (snapshot.connectionState == ConnectionState.active) {
           if (snapshot.hasData) {
             return ListView.builder(itemBuilder: (context,index){
+
+              var product=snapshot.data!.docs[index];
         return ListTile(
-          title: Text(snapshot.data!.docs[index]['title']),
-          subtitle: Text(snapshot.data!.docs[index]['description']),
+          title: Text(product['title']),
+          subtitle: Text(product['description']),
           leading: CircleAvatar(
-            child: Text(snapshot.data!.docs[index]['price'].toString()),),
-            trailing: IconButton(onPressed: () {
-              _deleteProduct(snapshot.data!.docs[index].id);
+            child: Text(product['price'].toString()),),
+            trailing:
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+             IconButton(onPressed: () {
+              _editProduct(product.id, product['title'],product['description'],product['price']);
             },
-              icon:Icon(Icons.delete),
+              icon:Icon(Icons.edit,color: Colors.blue,),
             ),
+              IconButton(onPressed: () {
+              _deleteProduct(product.id);
+            },
+              icon:Icon(Icons.delete,color: Colors.red,),
+            ),
+            ],)
+             
         );
             },
             itemCount: snapshot.data!.docs.length,);
