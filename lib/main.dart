@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
       ),
       home: Signup(),
       routes: {
+        '/login': (context)=>Login(),
         '/products': (context)=>MyProducts()
       },
     );
@@ -113,6 +115,12 @@ AlertDialog(
     return Scaffold(
       appBar: AppBar(
         title: Text("Products"),
+        actions: [
+          IconButton(onPressed: (){
+            // Navigator.pushNamed(context, '/login');
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>Login()));
+          }, icon: Icon(Icons.logout))
+        ],
 
       ),
       body: Center(

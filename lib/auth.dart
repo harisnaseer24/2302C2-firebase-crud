@@ -15,14 +15,12 @@ class _SignupState extends State<Signup> {
   TextEditingController usernameController=TextEditingController();
 
   var users= FirebaseFirestore.instance.collection('users');
-
 signup() async{
   try {
   final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
     email: emailController.text,
     password: passController.text,
   );
-
   await users.add({
     'email':emailController.text,
     'password':passController.text,
@@ -44,7 +42,6 @@ print("user created successfuly");
   print(e);
 }
 }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +86,86 @@ print("user created successfuly");
             SizedBox(height: 20,),
             ElevatedButton(onPressed: (){
               signup();
-            }, child: Text("Register"))
+            }, child: Text("Register")),
+
+            SizedBox(height: 20,),
+             GestureDetector(onTap: (){
+             Navigator.pushNamed(context, "/login");
+            }, child: Text("Already a user? Login now"))
+          ],
+        ),
+      )
+      ,
+    );
+  }
+}
+
+
+class Login extends StatefulWidget {
+  const Login({super.key});
+
+  @override
+  State<Login> createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+    TextEditingController emailController=TextEditingController();
+  TextEditingController passController=TextEditingController();
+
+  login()async{
+    try {
+  final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+    email: emailController.text,
+    password: passController.text
+  );
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Signed in as ${emailController.text}"),));
+     Navigator.pushNamed(context, '/products');
+
+} on FirebaseAuthException catch (e) {
+  if (e.code == 'user-not-found') {
+    print('No user found for that email.');
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No user found for that email. Please create an account first."),));
+     Navigator.pushNamed(context, '/');
+  } else if (e.code == 'invalid-credentials') {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Wrong password provided for that user."),));
+    print('Wrong password provided for that user.');
+  }
+}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Login Now'),
+      ),
+      body: 
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: ListView(
+          children: [
+             SizedBox(height: 20,),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                label: Text("Enter email"),
+                hintText: "Email"
+               ,border: OutlineInputBorder(),
+              ),
+            ),
+             SizedBox(height: 20,),
+            TextField(
+              controller: passController,
+              decoration: InputDecoration(
+                label: Text("Enter password"),
+                hintText: "Password"
+               ,border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20,),
+            ElevatedButton(onPressed: (){
+              login();
+            }, child: Text("Login"))
           ],
         ),
       )
