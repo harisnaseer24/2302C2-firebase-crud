@@ -1,19 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crud/addproducts.dart';
 import 'package:firebase_crud/auth.dart';
 import 'package:firebase_crud/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+bool isLoggedIn= prefs.getBool("isLoggedIn") ?? false;
+print(isLoggedIn);
+  runApp(MyApp(isLoggedIn:isLoggedIn));
 }
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  bool isLoggedIn;
+   MyApp({super.key, required this.isLoggedIn });
 
   // This widget is the root of your application.
   @override
@@ -25,23 +32,43 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: Signup(),
+
+
+      home: isLoggedIn ? MyProducts(): Login(),
       routes: {
+       
+         '/signup': (context)=>Signup(),
         '/login': (context)=>Login(),
-        '/products': (context)=>MyProducts()
+        '/add': (context)=> isLoggedIn ? AddProduct(): Login(),
+        // '/products': (context)=>MyProducts()
       },
     );
   }
 }
-
+ 
 class MyProducts extends StatefulWidget {
   const MyProducts({super.key});
+
 
   @override
   State<MyProducts> createState() => _MyProductsState();
 }
 
+
 class _MyProductsState extends State<MyProducts> {
+String email="";
+getUserDetails()async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    setState(() {
+      
+    email= prefs.getString("email")!;
+    print(email);
+    });
+}
+
+
+
 CollectionReference products= FirebaseFirestore.instance.collection('products');
 
  _deleteProduct(String id)async{
@@ -111,28 +138,44 @@ AlertDialog(
 
  }
   @override
+   initState(){
+    getUserDetails();
+   }
   Widget build(BuildContext context) {
     return Scaffold(
+   
       appBar: AppBar(
         title: Text("Products"),
         actions: [
-          IconButton(onPressed: (){
-            // Navigator.pushNamed(context, '/login');
+          IconButton(onPressed: ()async{
+         await FirebaseAuth.instance.signOut();
+   final SharedPreferences prefs = await SharedPreferences.getInstance();
+          
+          prefs.setBool("isLoggedIn", false);
+          prefs.remove("email");
+          
+
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>Login()));
           }, icon: Icon(Icons.logout))
+        
+        ,
+        Text(email)
         ],
 
       ),
       body: Center(
         child: StreamBuilder(stream: products.snapshots(), builder: (context,snapshot){
+         
         if (snapshot.connectionState == ConnectionState.active) {
+  
           if (snapshot.hasData) {
+
             return ListView.builder(itemBuilder: (context,index){
 
               var product=snapshot.data!.docs[index];
         return ListTile(
           title: Text(product['title']),
-          subtitle: Text(product['description']),
+          subtitle: Text(email),
           leading: CircleAvatar(
             child: Text(product['price'].toString()),),
             trailing:
