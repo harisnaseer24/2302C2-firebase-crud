@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,14 +15,20 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-bool isLoggedIn= prefs.getBool("isLoggedIn") ?? false;
+final SharedPreferences prefs = await SharedPreferences.getInstance();
+bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
+bool isAdmin = prefs.getBool("isAdmin") ?? false;
 print(isLoggedIn);
-  runApp(MyApp(isLoggedIn:isLoggedIn));
+
+
+  runApp(MyApp(isLoggedIn:isLoggedIn,isAdmin:isAdmin));
 }
+
 class MyApp extends StatelessWidget {
-  bool isLoggedIn;
-   MyApp({super.key, required this.isLoggedIn });
+  final bool isLoggedIn;
+  final bool isAdmin;
+
+  const MyApp({super.key,required this.isLoggedIn, required this.isAdmin});
 
   // This widget is the root of your application.
   @override
@@ -29,18 +37,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
+    
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-
-
-      home: isLoggedIn ? MyProducts(): Login(),
+      home: Login(),
       routes: {
+        '/signup':(context)=>Signup(),
        
-         '/signup': (context)=>Signup(),
-        '/login': (context)=>Login(),
-        '/add': (context)=> isLoggedIn ? AddProduct(): Login(),
-        // '/products': (context)=>MyProducts()
+        '/products':(context)=>isLoggedIn ?MyProducts() : Login(),
+        '/add':(context)=>(isLoggedIn && isAdmin) ? AddProductPage() : Login(),
       },
     );
   }
@@ -57,12 +63,14 @@ class MyProducts extends StatefulWidget {
 
 class _MyProductsState extends State<MyProducts> {
 String email="";
+String username='';
 getUserDetails()async{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     
     setState(() {
       
     email= prefs.getString("email")!;
+    username= prefs.getString("username")!;
     print(email);
     });
 }
@@ -159,7 +167,7 @@ AlertDialog(
           }, icon: Icon(Icons.logout))
         
         ,
-        Text(email)
+        Text(username)
         ],
 
       ),
@@ -177,7 +185,7 @@ AlertDialog(
           title: Text(product['title']),
           subtitle: Text(email),
           leading: CircleAvatar(
-            child: Text(product['price'].toString()),),
+            child: Image.memory(base64Decode(product['image'])),),
             trailing:
             Row(
               mainAxisSize: MainAxisSize.min,

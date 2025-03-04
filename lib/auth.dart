@@ -28,10 +28,11 @@ signup() async{
     'password':passController.text,
     'username':usernameController.text,
     'id':credential.user?.uid,
+    'role':'user'
   });
 print("user created successfuly");
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created successfuly"),));
-    Navigator.pushNamed(context, '/login');
+    Navigator.pushNamed(context, '/');
 
 } on FirebaseAuthException catch (e) {
   if (e.code == 'weak-password') {
@@ -123,16 +124,35 @@ class _LoginState extends State<Login> {
     password: passController.text
   );
 
-// var user= 
+var user= await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: emailController.text).get();
+
+String username=user.docs[0]['username'];
+
+if(user.docs[0]['role']=='admin'){
+  prefs.setBool("isAdmin", true);
     prefs.setBool("isLoggedIn", true);
     prefs.setString("email", emailController.text);
+    prefs.setString("username", username);
+print("admin is logged in");
+
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Signed in as ${emailController.text}"),));
+     Navigator.pushNamed(context, '/add');
+
+}else{
+  prefs.setBool("isAdmin", false);
+    prefs.setBool("isLoggedIn", true);
+    prefs.setString("email", emailController.text);
+    prefs.setString("username", username);
 
 
      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Signed in as ${emailController.text}"),));
-     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>MyProducts()));
+    Navigator.pushNamed(context, '/products');
 
+
+}
+  
 } on FirebaseAuthException catch (e) {
-    prefs.setBool("isLoggedIn", false);
+    // prefs.setBool("isLoggedIn", false);
     print(e.code);
 
   if (e.code == 'user-not-found') {
@@ -141,12 +161,12 @@ class _LoginState extends State<Login> {
      Navigator.pushNamed(context, '/signup');
   }
   else if (e.code == 'wrong-password') {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("fuck u."),));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("wrong pass."),));
     print('Wrong password provided for that user.');
      Navigator.pushNamed(context, '/signup');
   }
    else if (e.code == 'invalid-credential') {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not a user jani."),));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid credentials."),));
     print('Wrong password provided for that user.');
      Navigator.pushNamed(context, '/signup');
   }
@@ -155,11 +175,11 @@ class _LoginState extends State<Login> {
 
   @override
   initState(){
-     setDef()async{
-       final SharedPreferences prefs = await SharedPreferences.getInstance();
-          prefs.setBool("isLoggedIn", false);
-     }
-     setDef();
+    //  setDef()async{
+    //    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    //       prefs.setBool("isLoggedIn", false);
+    //  }
+    //  setDef();
   }
   Widget build(BuildContext context) {
     return Scaffold(

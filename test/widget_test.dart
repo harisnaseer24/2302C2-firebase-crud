@@ -9,11 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:firebase_crud/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+     final SharedPreferences prefs = await SharedPreferences.getInstance();
+bool isLoggedIn= prefs.getBool("isLoggedIn") ?? false;
+bool isAdmin= prefs.getBool("isAdmin") ?? false;
+    await tester.pumpWidget( MyApp(isLoggedIn:isLoggedIn,isAdmin:isAdmin));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
